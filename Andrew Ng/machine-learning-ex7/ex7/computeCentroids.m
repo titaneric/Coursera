@@ -26,12 +26,10 @@ centroids = zeros(K, n);
 % Note: You can use a for-loop over the centroids to compute this.
 %
 
-for i=1:K
-  points_index = (idx == i);
-  points = X(points_index, :);
-  centroids(i, :) = sum(points) / rows(points);
-  end
-% points_index = (idx == 1:K);
+points_index = (idx == 1:K);
+points_sum = points_index' * X;
+centroids = points_sum ./ sum(points_index)';
+
 
 
 
