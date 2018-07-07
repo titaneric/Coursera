@@ -57,23 +57,14 @@ public class RandomizedQueue<Item> implements Iterable<Item> {
         this.tail = n;
     }
 
-    private void moveRestAfterIndex(int index) {
-        for (int i = index + 1; i < this.tail; i++) {
-            this.s[i - 1] = this.s[i];
-        }
-        this.s[this.tail - 1] = null;
-    }
-
     public Item dequeue() {
         if (this.isEmpty()) {
             throw new NoSuchElementException("Queue is empty!");
         }
         int random_int = StdRandom.uniform(this.n);
         Item item = this.s[random_int];
-        this.s[random_int] = null;
-        if (random_int + 1 < this.tail) {
-            this.moveRestAfterIndex(random_int);
-        }
+        this.s[random_int] = this.s[this.tail-1];
+        this.s[this.tail-1] = null;
         this.n--;
         this.tail--;
         if (this.n > 0 && n == this.s.length / 4) {
@@ -88,7 +79,8 @@ public class RandomizedQueue<Item> implements Iterable<Item> {
         }
         return this.s[StdRandom.uniform(this.n)];
     }
-
+    
+    @Override
     public Iterator<Item> iterator() {
         return new RandomizedQueueIterator();
     }
@@ -96,7 +88,7 @@ public class RandomizedQueue<Item> implements Iterable<Item> {
     private class RandomizedQueueIterator implements Iterator<Item> {
 
         private int current = head;
-        private Item[] copy_s;
+        final private Item[] copy_s;
 
         public RandomizedQueueIterator() {
             copy_s = s.clone();
@@ -136,17 +128,20 @@ public class RandomizedQueue<Item> implements Iterable<Item> {
         q.enqueue(4);
 
         q.enqueue(5);
-
-        Iterator<Integer> it = q.iterator();
-
-        Iterator<Integer> it2 = q.iterator();
-        while (it.hasNext()) {
-            System.out.println("Iterator it " + it.next());
+        for(int i=0;i<6;i++){
+            System.out.println(q.dequeue());
         }
 
-        while (it2.hasNext()) {
-            System.out.println("Iterator it2 " + it2.next());
-        }
+//        Iterator<Integer> it = q.iterator();
+//
+//        Iterator<Integer> it2 = q.iterator();
+//        while (it.hasNext()) {
+//            System.out.println("Iterator it " + it.next());
+//        }
+//
+//        while (it2.hasNext()) {
+//            System.out.println("Iterator it2 " + it2.next());
+//        }
 
     }
 }

@@ -7,10 +7,11 @@ package deque;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
+import edu.princeton.cs.algs4.StdOut;
 /**
  *
  * @author titan
+ * @param <Item>
  */
 public class Deque<Item> implements Iterable<Item> {
 
@@ -24,8 +25,8 @@ public class Deque<Item> implements Iterable<Item> {
         public Node previous;
 
     }
-    private Node head = new Node();
-    private Node tail = new Node();
+    final private Node head = new Node();
+    final private Node tail = new Node();
     private int size = 0;
 
     public Deque() {
@@ -126,7 +127,7 @@ public class Deque<Item> implements Iterable<Item> {
     public static void main(String[] args) {
         // TODO code application logic here
 
-        Deque<Integer> deque = new Deque();
+        Deque<Integer> deque = new Deque<Integer>();
         deque.addFirst(1);
         deque.addFirst(2);
         deque.addFirst(3);
@@ -134,7 +135,7 @@ public class Deque<Item> implements Iterable<Item> {
         deque.removeFirst();
         deque.removeLast();
         for (int value : deque) {
-            System.out.println(value);
+            StdOut.println(value);
         }
     }
 
