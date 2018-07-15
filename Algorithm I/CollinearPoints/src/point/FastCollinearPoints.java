@@ -7,11 +7,11 @@ package point;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ListIterator;
 
 import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdDraw;
 import edu.princeton.cs.algs4.StdOut;
-import java.util.ListIterator;
 
 /**
  *
@@ -71,10 +71,13 @@ public class FastCollinearPoints {
 
     private void findSegments() {
         ArrayList<EndPoints> segment_list = new ArrayList<EndPoints>();
-        for (int k = 0; k < this.points.length; k++) {
-            ArrayList<Point> other_p_list = new ArrayList<Point>(Arrays.asList(this.points));
-            Point p = other_p_list.get(k);
-            other_p_list.remove(k);
+        ArrayList<Point> reference_list = new ArrayList<Point>(Arrays.asList(this.points));
+        while(!reference_list.isEmpty()) {
+            ArrayList<Point> other_p_list = new ArrayList<Point>(reference_list);
+            
+            reference_list.remove(0);
+            Point p = other_p_list.get(0);
+            other_p_list.remove(0);
             other_p_list.sort(p.slopeOrder());
 
             // group points by their slope
@@ -103,10 +106,7 @@ public class FastCollinearPoints {
                     Point[] p_array = new Point[p_list.size()];
                     p_array = p_list.toArray(p_array);
                     Arrays.sort(p_array);
-                    EndPoints segment = new EndPoints(p_array[0], p_array[p_array.length - 1]);
-                    if (!this.checkSegmentListDuplicate(segment_list, segment)) {
-                        segment_list.add(segment);
-                    }
+                    segment_list = this.updateSegmentSet(segment_list, p_array[0], p_array[p_array.length-1]);
                 }
             }
         }
@@ -118,18 +118,37 @@ public class FastCollinearPoints {
             this.segment_array[i] = new LineSegment(point.p, point.q);
         }
     }
+    private ArrayList<EndPoints> updateSegmentSet(ArrayList<EndPoints> segment_list, Point p, Point q) {
+        for (EndPoints segment : new ArrayList<EndPoints>(segment_list)) {
+            Point[] p_array;
+            Point left_p = segment.p;
+            Point right_p = segment.q;
+
+            // find the point that collinear with end_p
+            if (left_p.slopeTo(q) == left_p.slopeTo(right_p)) {
+                if (left_p.slopeTo(p) == left_p.slopeTo(q)) {
+                    p_array = new Point[]{left_p, right_p, p, q};
+                    Arrays.sort(p_array);
+                    segment_list.remove(segment);
+                    segment_list.add(new EndPoints(p_array[0], p_array[p_array.length - 1]));
+                    return segment_list;
+                } else if (left_p == p) {
+                    return segment_list;
+                }
+            }
+
+        }
+        segment_list.add(new EndPoints(p, q));
+        return segment_list;
+    }
 
     public LineSegment[] segments() { // the line segments
         return this.segment_array.clone();
     }
 
-    private boolean checkSegmentListDuplicate(ArrayList<EndPoints> segment_list, EndPoints segment) {
-        return segment_list.stream().anyMatch((l) -> (l.p.compareTo(segment.p) == 0 && l.q.compareTo(segment.q) == 0));
-    }
-
     public static void main(String[] args) {
         // read the n points from a file
-        String f = "C:\\Users\\titan\\Documents\\Coursera\\Algorithm I\\CollinearPoints\\src\\point\\collinear\\grid6x6.txt";
+        String f = "C:\\Users\\titan\\Documents\\Coursera\\Algorithm I\\CollinearPoints\\src\\point\\collinear\\kw1260.txt";
         In in = new In(f);
         int n = in.readInt();
         Point[] points = new Point[n];
@@ -159,5 +178,6 @@ public class FastCollinearPoints {
             segment.draw();
         }
         StdDraw.show();
+
     }
 }
