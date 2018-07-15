@@ -25,11 +25,13 @@ def solve_it(input_data):
 
     if item_count <= 200:
         obj, taken = dynimic_programming(items, capacity)
+        output_data = "{} {}\n".format(obj, 1)
     else:
         obj, taken = greedy(items, capacity)
+        output_data = "{} {}\n".format(obj, 0)
 
     # prepare the solution in the specified output format
-    output_data = "{} {}\n".format(obj, 1)
+    
     output_data += ' '.join(map(str, taken))
     return output_data
 
