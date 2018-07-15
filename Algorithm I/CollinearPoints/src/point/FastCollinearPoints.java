@@ -33,15 +33,19 @@ public class FastCollinearPoints {
     final private Point[] points;
     private LineSegment[] segment_array;
 
-    public FastCollinearPoints(Point[] points) {
-        if (points == null || this.checkPointsNull(points) || this.checkPointsDuplicate(points)) {
+    public FastCollinearPoints(Point[] point_array) {
+        if (point_array == null) {
             throw new IllegalArgumentException();
         }
-        this.points = points.clone();
+        this.points = point_array.clone();
+        if (this.checkPointsNull() || this.checkPointsDuplicate()) {
+            throw new IllegalArgumentException();
+        }
+        this.findSegments();
     }
 
-    private boolean checkPointsNull(Point[] points) {
-        for (Point p : points) {
+    private boolean checkPointsNull() {
+        for (Point p : this.points) {
             if (p == null) {
                 return true;
             }
@@ -49,11 +53,11 @@ public class FastCollinearPoints {
         return false;
     }
 
-    private boolean checkPointsDuplicate(Point[] points) {
-        Arrays.sort(points);
-        for (int i = 0; i < points.length - 1; i++) {
-            Point cur_p = points[i];
-            Point next_p = points[i + 1];
+    private boolean checkPointsDuplicate() {
+        Arrays.sort(this.points);
+        for (int i = 0; i < this.points.length - 1; i++) {
+            Point cur_p = this.points[i];
+            Point next_p = this.points[i + 1];
             if (cur_p.compareTo(next_p) == 0) {
                 return true;
             }
@@ -65,7 +69,7 @@ public class FastCollinearPoints {
         return this.segment_array.length;
     }
 
-    public LineSegment[] segments() { // the line segments
+    private void findSegments() {
         ArrayList<EndPoints> segment_list = new ArrayList<EndPoints>();
         for (int k = 0; k < this.points.length; k++) {
             ArrayList<Point> other_p_list = new ArrayList<Point>(Arrays.asList(this.points));
@@ -113,8 +117,10 @@ public class FastCollinearPoints {
             EndPoints point = it.next();
             this.segment_array[i] = new LineSegment(point.p, point.q);
         }
-        return this.segment_array.clone();
+    }
 
+    public LineSegment[] segments() { // the line segments
+        return this.segment_array.clone();
     }
 
     private boolean checkSegmentListDuplicate(ArrayList<EndPoints> segment_list, EndPoints segment) {
@@ -123,7 +129,7 @@ public class FastCollinearPoints {
 
     public static void main(String[] args) {
         // read the n points from a file
-        String f = "C:\\Users\\titan\\Documents\\Coursera\\Algorithm I\\CollinearPoints\\src\\point\\null_test\\null_0.txt";
+        String f = "C:\\Users\\titan\\Documents\\Coursera\\Algorithm I\\CollinearPoints\\src\\point\\collinear\\grid6x6.txt";
         In in = new In(f);
         int n = in.readInt();
         Point[] points = new Point[n];

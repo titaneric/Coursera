@@ -33,16 +33,19 @@ public class BruteCollinearPoints {
     final private Point[] points;
     private LineSegment[] segment_array;
 
-    public BruteCollinearPoints(Point[] points) {
-        if (points == null || this.checkPointsNull(points) || this.checkPointsDuplicate(points)) {
+    public BruteCollinearPoints(Point[] point_array) {
+        if (point_array == null) {
             throw new IllegalArgumentException();
         }
-        this.points = points.clone();
-
+        this.points = point_array.clone();
+        if (this.checkPointsNull() || this.checkPointsDuplicate()) {
+            throw new IllegalArgumentException();
+        }
+        this.findSegments();
     }
 
-    private boolean checkPointsNull(Point[] points) {
-        for (Point p : points) {
+    private boolean checkPointsNull() {
+        for (Point p : this.points) {
             if (p == null) {
                 return true;
             }
@@ -50,11 +53,11 @@ public class BruteCollinearPoints {
         return false;
     }
 
-    private boolean checkPointsDuplicate(Point[] points) {
-        Arrays.sort(points);
-        for (int i = 0; i < points.length - 1; i++) {
-            Point cur_p = points[i];
-            Point next_p = points[i + 1];
+    private boolean checkPointsDuplicate() {
+        Arrays.sort(this.points);
+        for (int i = 0; i < this.points.length - 1; i++) {
+            Point cur_p = this.points[i];
+            Point next_p = this.points[i + 1];
             if (cur_p.compareTo(next_p) == 0) {
                 return true;
             }
@@ -66,7 +69,7 @@ public class BruteCollinearPoints {
         return this.segment_array.length;
     }
 
-    public LineSegment[] segments() {
+    private void findSegments() {
         ArrayList<EndPoints> segment_list = new ArrayList<EndPoints>();
         ArrayList<Point[]> comb_points = this.getCombination(this.points, 4);
         for (Object[] sub_points : comb_points) {
@@ -94,6 +97,10 @@ public class BruteCollinearPoints {
             EndPoints point = it.next();
             this.segment_array[i] = new LineSegment(point.p, point.q);
         }
+    }
+
+    public LineSegment[] segments() {
+
         return this.segment_array.clone();
     }
 
@@ -162,7 +169,7 @@ public class BruteCollinearPoints {
     public static void main(String[] args) {
 
         // read the n points from a file
-        String f = "C:\\Users\\titan\\Documents\\Coursera\\Algorithm I\\CollinearPoints\\src\\point\\collinear\\input6.txt";
+        String f = "C:\\Users\\titan\\Documents\\Coursera\\Algorithm I\\CollinearPoints\\src\\point\\collinear\\input100.txt";
         In in = new In(f);
         int n = in.readInt();
         Point[] points = new Point[n];
