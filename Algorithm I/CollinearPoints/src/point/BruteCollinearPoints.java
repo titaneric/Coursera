@@ -100,7 +100,6 @@ public class BruteCollinearPoints {
     }
 
     public LineSegment[] segments() {
-
         return this.segment_array.clone();
     }
 

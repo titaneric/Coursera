@@ -29,6 +29,30 @@ public class FastCollinearPoints {
             this.q = y;
         }
     }
+    
+    /* Revise and reference from Zack Zatkin-Gold at
+        https://stackoverflow.com/questions/23587314/how-to-sort-an-array-and-keep-track-of-the-index-in-java*/
+    private class Pair implements Comparable<Pair>{
+        public final int index;
+        public final double value;
+        
+        public Pair(int index, double value){
+            this.index = index;
+            this.value = value;
+        }
+        @Override
+        public int compareTo(Pair other){
+            if(this.value < other.value){
+                return -1;
+            }
+            else if(this.value > other.value){
+                return 1;
+            }
+            else{
+                return 0;
+            }
+        }
+    }
 
     final private Point[] points;
     private LineSegment[] segment_array;
@@ -78,37 +102,40 @@ public class FastCollinearPoints {
             reference_list.remove(0);
             Point p = other_p_list.get(0);
             other_p_list.remove(0);
-            other_p_list.sort(p.slopeOrder());
-
-            // group points by their slope
+            
+            Pair[] slope_array = new Pair[other_p_list.size()];
+            for(int i=0;i<slope_array.length;i++){
+                slope_array[i] = new Pair(i, p.slopeTo(other_p_list.get(i)));
+            }
+            Arrays.sort(slope_array);
             int stride = 1;
-            for (int i = 0; i < other_p_list.size(); i += stride) {
+            for(int i=0;i<slope_array.length;i+=stride){
                 stride = 1;
                 ArrayList<Point> p_list = new ArrayList<Point>();
-                Point q = other_p_list.get(i);
-                double slope = p.slopeTo(q);
-                p_list.add(q);
+                double q_slope = slope_array[i].value;
                 p_list.add(p);
-
-                // find the points that having equal slope to q
-                while (i + stride < other_p_list.size()) {
-                    Point r = other_p_list.get(i + stride);
-                    double other_slope = p.slopeTo(r);
-                    if (slope == other_slope) {
-                        stride += 1;
-                        p_list.add(r);
-                    } else {
+                p_list.add(other_p_list.get(slope_array[i].index));
+                
+                while(i + stride < other_p_list.size()){
+                    Pair p_pair = slope_array[i + stride];
+                    double r_slope = p_pair.value;
+                    if(q_slope == r_slope){
+                        p_list.add(other_p_list.get(p_pair.index));
+                        stride++;
+                    }
+                    else{
                         break;
                     }
                 }
-
+                
                 if (p_list.size() >= 4) {
                     Point[] p_array = new Point[p_list.size()];
                     p_array = p_list.toArray(p_array);
                     Arrays.sort(p_array);
-                    segment_list = this.updateSegmentSet(segment_list, p_array[0], p_array[p_array.length-1]);
+                    segment_list = this.updateSegmentSet(segment_list, p_array[0], p_array[p_array.length - 1]);
                 }
             }
+            
         }
         this.segment_array = new LineSegment[segment_list.size()];
         ListIterator<EndPoints> it = segment_list.listIterator();
@@ -148,7 +175,7 @@ public class FastCollinearPoints {
 
     public static void main(String[] args) {
         // read the n points from a file
-        String f = "C:\\Users\\titan\\Documents\\Coursera\\Algorithm I\\CollinearPoints\\src\\point\\collinear\\kw1260.txt";
+        String f = "C:\\Users\\titan\\Documents\\Coursera\\Algorithm I\\CollinearPoints\\src\\point\\collinear\\input8.txt";
         In in = new In(f);
         int n = in.readInt();
         Point[] points = new Point[n];
