@@ -8,6 +8,7 @@ package point;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ListIterator;
+import java.util.Collections;
 
 import edu.princeton.cs.algs4.In;
 import edu.princeton.cs.algs4.StdDraw;
@@ -29,28 +30,39 @@ public class FastCollinearPoints {
             this.q = y;
         }
     }
-    
+
     /* Revise and reference from Zack Zatkin-Gold at
         https://stackoverflow.com/questions/23587314/how-to-sort-an-array-and-keep-track-of-the-index-in-java*/
-    private class Pair implements Comparable<Pair>{
+    private class Pair implements Comparable<Pair> {
+
         public final int index;
         public final double value;
-        
-        public Pair(int index, double value){
+
+        public Pair(int index, double value) {
             this.index = index;
             this.value = value;
         }
+
         @Override
-        public int compareTo(Pair other){
-            if(this.value < other.value){
+        public int compareTo(Pair other) {
+            if (this.value < other.value) {
                 return -1;
-            }
-            else if(this.value > other.value){
+            } else if (this.value > other.value) {
                 return 1;
-            }
-            else{
+            } else {
                 return 0;
             }
+        }
+    }
+
+    private class SegmentInfo {
+
+        public ArrayList<Point> points;
+        public double slope;
+
+        public SegmentInfo(ArrayList<Point> points, double slope) {
+            this.points = points;
+            this.slope = slope;
         }
     }
 
@@ -94,79 +106,96 @@ public class FastCollinearPoints {
     }
 
     private void findSegments() {
-        ArrayList<EndPoints> segment_list = new ArrayList<EndPoints>();
         ArrayList<Point> reference_list = new ArrayList<Point>(Arrays.asList(this.points));
-        while(!reference_list.isEmpty()) {
+        ArrayList<SegmentInfo> points_list = new ArrayList<SegmentInfo>();
+
+        while (!reference_list.isEmpty()) {
             ArrayList<Point> other_p_list = new ArrayList<Point>(reference_list);
-            
+            ArrayList<Point> filtered_p_list = new ArrayList<Point>();
             reference_list.remove(0);
             Point p = other_p_list.get(0);
             other_p_list.remove(0);
-            
-            Pair[] slope_array = new Pair[other_p_list.size()];
-            for(int i=0;i<slope_array.length;i++){
-                slope_array[i] = new Pair(i, p.slopeTo(other_p_list.get(i)));
+
+            boolean points_list_not_empty = !points_list.isEmpty();
+
+            ArrayList<Pair> slope_list = new ArrayList<Pair>();
+            while (!other_p_list.isEmpty()) {
+                int i = filtered_p_list.size();
+                Point other_p = other_p_list.get(0);
+                other_p_list.remove(0);
+                double p_q_slope = p.slopeTo(other_p);
+                boolean collinear_state = false;
+                if (points_list_not_empty) {
+                    // find segment that collinear with p
+                    for (SegmentInfo segment : points_list) {
+                        // remove the collinear points if found
+                        if (this.checkPointsCollinear(segment, p, other_p, p_q_slope)) {
+                            for (Point q : segment.points) {
+                                other_p_list.remove(q);
+                            }
+                            collinear_state = true;
+                            break;
+                        }
+                    }
+                }
+                // add point if didn't find collinear segment or points_list is empty
+                if (!collinear_state) {
+                    slope_list.add(new Pair(i, p_q_slope));
+                    filtered_p_list.add(other_p);
+                }
             }
-            Arrays.sort(slope_array);
+            Collections.sort(slope_list);
             int stride = 1;
-            for(int i=0;i<slope_array.length;i+=stride){
+            for (int i = 0; i < slope_list.size(); i += stride) {
                 stride = 1;
                 ArrayList<Point> p_list = new ArrayList<Point>();
-                double q_slope = slope_array[i].value;
+                double q_slope = slope_list.get(i).value;
                 p_list.add(p);
-                p_list.add(other_p_list.get(slope_array[i].index));
-                
-                while(i + stride < other_p_list.size()){
-                    Pair p_pair = slope_array[i + stride];
+                p_list.add(filtered_p_list.get(slope_list.get(i).index));
+
+                while (i + stride < filtered_p_list.size()) {
+                    Pair p_pair = slope_list.get(i + stride);
                     double r_slope = p_pair.value;
-                    if(q_slope == r_slope){
-                        p_list.add(other_p_list.get(p_pair.index));
+                    if (q_slope == r_slope) {
+                        p_list.add(filtered_p_list.get(p_pair.index));
                         stride++;
-                    }
-                    else{
+                    } else {
                         break;
                     }
                 }
-                
+                /* add to points_list if size of p_list >= 4
+                    it is guaranteed that 
+                */
                 if (p_list.size() >= 4) {
-                    Point[] p_array = new Point[p_list.size()];
-                    p_array = p_list.toArray(p_array);
-                    Arrays.sort(p_array);
-                    segment_list = this.updateSegmentSet(segment_list, p_array[0], p_array[p_array.length - 1]);
+                    Collections.sort(p_list);
+                    points_list.add(new SegmentInfo(p_list, q_slope));
                 }
             }
-            
+
         }
-        this.segment_array = new LineSegment[segment_list.size()];
-        ListIterator<EndPoints> it = segment_list.listIterator();
+        // copy result to segment_array
+        this.segment_array = new LineSegment[points_list.size()];
+        ListIterator<SegmentInfo> it = points_list.listIterator();
         while (it.hasNext()) {
             int i = it.nextIndex();
-            EndPoints point = it.next();
-            this.segment_array[i] = new LineSegment(point.p, point.q);
+            SegmentInfo segment = it.next();
+            ArrayList<Point> tmp_points = segment.points;
+            this.segment_array[i] = new LineSegment(tmp_points.get(0), tmp_points.get(tmp_points.size()-1));
         }
     }
-    private ArrayList<EndPoints> updateSegmentSet(ArrayList<EndPoints> segment_list, Point p, Point q) {
-        for (EndPoints segment : new ArrayList<EndPoints>(segment_list)) {
-            Point[] p_array;
-            Point left_p = segment.p;
-            Point right_p = segment.q;
 
-            // find the point that collinear with end_p
-            if (left_p.slopeTo(q) == left_p.slopeTo(right_p)) {
-                if (left_p.slopeTo(p) == left_p.slopeTo(q)) {
-                    p_array = new Point[]{left_p, right_p, p, q};
-                    Arrays.sort(p_array);
-                    segment_list.remove(segment);
-                    segment_list.add(new EndPoints(p_array[0], p_array[p_array.length - 1]));
-                    return segment_list;
-                } else if (left_p == p) {
-                    return segment_list;
+    private boolean checkPointsCollinear(SegmentInfo segment, Point p, Point q, double p_q_slope) {
+        double end_points_slope = segment.slope;
+        // check the slope
+        if (p_q_slope == end_points_slope) {
+            // check p or q existing in points
+            for (Point r : segment.points) {
+                if (r == p || r == q) {
+                    return true;
                 }
             }
-
         }
-        segment_list.add(new EndPoints(p, q));
-        return segment_list;
+        return false;
     }
 
     public LineSegment[] segments() { // the line segments
@@ -175,7 +204,7 @@ public class FastCollinearPoints {
 
     public static void main(String[] args) {
         // read the n points from a file
-        String f = "C:\\Users\\titan\\Documents\\Coursera\\Algorithm I\\CollinearPoints\\src\\point\\collinear\\input8.txt";
+        String f = "C:\\Users\\titan\\Documents\\Coursera\\Algorithm I\\CollinearPoints\\src\\point\\collinear\\rs1423.txt";
         In in = new In(f);
         int n = in.readInt();
         Point[] points = new Point[n];
